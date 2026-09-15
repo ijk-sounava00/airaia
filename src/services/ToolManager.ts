@@ -116,13 +116,26 @@ export class ToolManager {
 
     // 3. changeAuraColor
     this.registerTool('changeAuraColor', async (args) => {
-      const rawTheme = String(args.theme || '').toLowerCase();
+      const rawTheme = String(args.theme || '').toLowerCase().trim();
+      const themeAliases: Record<string, AuraTheme> = {
+        rose: 'crimson',
+        red: 'crimson',
+        amber: 'solar',
+        orange: 'solar',
+        yellow: 'gold',
+        pink: 'vapor',
+        green: 'emerald',
+        blue: 'sapphire',
+        purple: 'violet',
+      };
       const validThemes: AuraTheme[] = [
-        'cyan', 'violet', 'emerald', 'rose', 'amber',
-        'sapphire', 'sunset', 'aurora', 'amethyst', 'obsidian'
+        'cyan', 'violet', 'emerald', 'crimson', 'solar',
+        'sapphire', 'sunset', 'aurora', 'amethyst', 'obsidian', 'gold', 'vapor'
       ];
       let theme: AuraTheme = 'cyan';
-      if (validThemes.includes(rawTheme as AuraTheme)) {
+      if (themeAliases[rawTheme]) {
+        theme = themeAliases[rawTheme];
+      } else if (validThemes.includes(rawTheme as AuraTheme)) {
         theme = rawTheme as AuraTheme;
       }
 

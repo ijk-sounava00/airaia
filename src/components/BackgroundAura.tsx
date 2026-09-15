@@ -16,18 +16,21 @@ export const BackgroundAura: React.FC<BackgroundAuraProps> = ({
 }) => {
   const currentTheme = AURA_THEMES[auraTheme] || AURA_THEMES.cyan;
 
-  const glowScale = 1 + volume * 0.4;
-  const glowOpacity = isSpeaking ? 0.35 + volume * 0.25 : 0.2 + volume * 0.15;
+  const glowScale = 1 + volume * 0.45;
+  const glowOpacity = isSpeaking ? 0.38 + volume * 0.28 : 0.22 + volume * 0.18;
 
   return (
-    <div id="aira-background-root" className="fixed inset-0 pointer-events-none overflow-hidden select-none -z-10 bg-[#06080e]">
-      {/* Deep gradient background */}
-      <div className="absolute inset-0 bg-radial from-[#0d1322] via-[#080b12] to-[#040609]" />
+    <div
+      id="aira-background-root"
+      className="fixed inset-0 pointer-events-none overflow-hidden select-none -z-10 bg-[#04060c]"
+    >
+      {/* Deep Cyber Radial Gradient */}
+      <div className="absolute inset-0 bg-radial from-[#090f1d] via-[#050811] to-[#020408]" />
 
-      {/* Primary ambient light bloom */}
+      {/* Primary Ambient Light Bloom */}
       <motion.div
-        id="aira-ambient-bloom"
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] md:w-[800px] md:h-[800px] rounded-full filter blur-[120px] transition-colors duration-1000"
+        id="aira-ambient-bloom-primary"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] md:w-[780px] md:h-[780px] rounded-full filter blur-[130px] transition-colors duration-1000"
         style={{
           backgroundColor: currentTheme.primary,
           opacity: glowOpacity,
@@ -37,41 +40,58 @@ export const BackgroundAura: React.FC<BackgroundAuraProps> = ({
         }}
         transition={{
           type: 'spring',
-          stiffness: 80,
-          damping: 20,
+          stiffness: 70,
+          damping: 22,
         }}
       />
 
-      {/* Secondary accent bloom */}
+      {/* Secondary Accent Light Bloom */}
       <motion.div
-        id="aira-accent-bloom"
-        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full filter blur-[90px] transition-colors duration-1000"
+        id="aira-accent-bloom-secondary"
+        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[380px] h-[380px] md:w-[500px] md:h-[500px] rounded-full filter blur-[100px] transition-colors duration-1000"
         style={{
           backgroundColor: currentTheme.accent,
-          opacity: glowOpacity * 0.7,
+          opacity: glowOpacity * 0.65,
         }}
         animate={{
-          scale: [1, 1.15, 1],
-          rotate: [0, 90, 180],
+          scale: [1, 1.18, 1],
+          rotate: [0, 120, 240, 360],
         }}
         transition={{
-          duration: 12,
+          duration: 16,
+          repeat: Infinity,
+          ease: 'linear',
+        }}
+      />
+
+      {/* Tertiary Deep Orbit Light */}
+      <motion.div
+        className="absolute bottom-10 right-1/4 w-[320px] h-[320px] rounded-full filter blur-[110px] transition-colors duration-1000"
+        style={{
+          backgroundColor: currentTheme.primary,
+          opacity: glowOpacity * 0.35,
+        }}
+        animate={{
+          scale: [0.9, 1.1, 0.9],
+        }}
+        transition={{
+          duration: 8,
           repeat: Infinity,
           ease: 'easeInOut',
         }}
       />
 
-      {/* Subtle futuristic matrix grid */}
+      {/* Futuristic Cyber Circuit Grid */}
       <div
-        className="absolute inset-0 opacity-[0.025]"
+        className="absolute inset-0 opacity-[0.035]"
         style={{
-          backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.4) 1px, transparent 0)`,
-          backgroundSize: '40px 40px',
+          backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.6) 1px, transparent 0)`,
+          backgroundSize: '36px 36px',
         }}
       />
 
-      {/* Vignette border */}
-      <div className="absolute inset-0 bg-radial from-transparent via-transparent to-black/60" />
+      {/* Vignette Shadow Frame */}
+      <div className="absolute inset-0 bg-radial from-transparent via-transparent to-black/75" />
     </div>
   );
 };

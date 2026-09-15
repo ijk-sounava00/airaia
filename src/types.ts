@@ -12,13 +12,15 @@ export type AuraTheme =
   | 'cyan'
   | 'violet'
   | 'emerald'
-  | 'rose'
-  | 'amber'
+  | 'crimson'
+  | 'solar'
   | 'sapphire'
   | 'sunset'
   | 'aurora'
   | 'amethyst'
-  | 'obsidian';
+  | 'obsidian'
+  | 'gold'
+  | 'vapor';
 
 export interface AuraConfig {
   id: AuraTheme;
@@ -31,7 +33,12 @@ export interface AuraConfig {
   accent: string;
   gradient: string;
   tag: string;
+  soundHue?: string;
 }
+
+export type CoreVisualMode = 'quantum' | 'spectral' | 'matrix';
+
+export type AIRAMood = 'balanced' | 'empathetic' | 'analytical' | 'playful' | 'zen' | 'cyber';
 
 export type MemoryCategory =
   | 'identity'

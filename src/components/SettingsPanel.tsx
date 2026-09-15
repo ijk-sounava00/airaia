@@ -1,17 +1,15 @@
 import React from 'react';
-import { motion } from 'motion/react';
 import {
-  Settings,
   X,
   Zap,
-  Activity,
-  Sliders,
   Volume2,
-  Shield,
   Palette,
+  Sliders,
+  Check,
   Radio,
   Cpu,
-  Check,
+  Shield,
+  Layers,
 } from 'lucide-react';
 import { AuraTheme, AssistantState } from '../types';
 import { AURA_THEMES } from '../data/auraThemes';
@@ -44,11 +42,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label="AIRA Diagnostics & Settings"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200"
     >
       <div
         id="aira-settings-panel"
-        className="relative w-full max-w-xl flex flex-col rounded-3xl backdrop-blur-2xl border shadow-2xl overflow-hidden bg-[#090d18]/95"
+        className="relative w-full max-w-xl flex flex-col rounded-3xl backdrop-blur-2xl border shadow-2xl overflow-hidden bg-[#070a14]/95"
         style={{
           borderColor: currentTheme.border,
           boxShadow: `0 24px 64px ${currentTheme.glow}`,
@@ -71,10 +69,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-white tracking-wide">
-                Engine Settings & Diagnostics
+                Engine Diagnostics & Settings
               </h2>
               <p className="text-xs text-slate-400">
-                Ultra-low latency configuration & neon telemetry
+                Quantum Core v2 neural pipeline configuration
               </p>
             </div>
           </div>
@@ -99,13 +97,13 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 Live Response Latency Engine
               </span>
               <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
-                Optimized (1024 chunks)
+                Active Buffer (1024 chunks)
               </span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
               <div className="p-2.5 rounded-xl bg-black/40 border border-white/5">
-                <span className="text-[10px] text-slate-400 block">AI Engine</span>
+                <span className="text-[10px] text-slate-400 block">AI Model</span>
                 <span className="text-xs font-mono font-bold text-white truncate block">
                   gemini-3.1-flash-live
                 </span>
@@ -117,9 +115,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 </span>
               </div>
               <div className="p-2.5 rounded-xl bg-black/40 border border-white/5 col-span-2 sm:col-span-1">
-                <span className="text-[10px] text-slate-400 block">Turn Interruption</span>
+                <span className="text-[10px] text-slate-400 block">Neural Barge-in</span>
                 <span className="text-xs font-mono font-bold text-emerald-300 block">
-                  Instant Barge-in
+                  Instant Hardware Cut
                 </span>
               </div>
             </div>
@@ -130,13 +128,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
               <span className="flex items-center gap-1.5">
                 <Volume2 className="w-4 h-4 text-cyan-400" />
-                Vocal Persona & Speech
+                Vocal Persona & Audio Spectrum
               </span>
-              <span className="text-[10px] font-mono text-slate-400">Voice: Kore</span>
+              <span className="text-[10px] font-mono text-slate-400">Voice: Kore (Natural Human)</span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
-              AIRA is configured as a warm, witty human conversational companion with zero robotic filler.
-              When spoken to, she responds without delay and finishes speaking naturally.
+              AIRA v2 delivers fast, witty, human-style conversation with zero robotic prefixes. When spoken to, she responds immediately and ceases speaking when done.
             </p>
             <div className="flex items-center gap-2 pt-1 text-xs">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -153,19 +150,19 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             </div>
           </div>
 
-          {/* 10 Cyber-Futuristic Color Codes */}
+          {/* 12 Cyber-Futuristic Color Codes */}
           <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-3">
             <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
               <span className="flex items-center gap-1.5">
                 <Palette className="w-4 h-4" style={{ color: currentTheme.accent }} />
-                10 Holographic Color Themes
+                12 Cybernetic Color Themes
               </span>
               <span className="text-[10px] font-mono" style={{ color: currentTheme.accent }}>
                 Active: {currentTheme.name}
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
               {themeKeys.map((key) => {
                 const config = AURA_THEMES[key];
                 const isSelected = key === auraTheme;
@@ -181,7 +178,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     }`}
                   >
                     <div
-                      className="w-5 h-5 rounded-full shadow-md flex items-center justify-center"
+                      className="w-5 h-5 rounded-full shadow-md flex items-center justify-center border border-white/20"
                       style={{ backgroundColor: config.primary }}
                     >
                       {isSelected && <Check className="w-3 h-3 text-black stroke-[3]" />}
@@ -210,7 +207,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             className="px-5 py-2 rounded-xl font-semibold text-xs text-black cursor-pointer shadow-lg"
             style={{ backgroundColor: currentTheme.primary }}
           >
-            Save & Close
+            Apply & Close
           </button>
         </div>
       </div>

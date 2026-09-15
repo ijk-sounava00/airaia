@@ -109,6 +109,63 @@ class SoundEffects {
       // ignore
     }
   }
+
+  /**
+   * Futuristic holographic chime when screen sharing connects
+   */
+  playScreenShareStart(): void {
+    try {
+      const ctx = this.getContext();
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(520, now);
+      osc.frequency.exponentialRampToValueAtTime(1040, now + 0.18);
+      osc.frequency.exponentialRampToValueAtTime(1560, now + 0.3);
+
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.06, now + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.35);
+    } catch {
+      // ignore
+    }
+  }
+
+  /**
+   * Subtle descending tone when screen sharing stops
+   */
+  playScreenShareStop(): void {
+    try {
+      const ctx = this.getContext();
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, now);
+      osc.frequency.exponentialRampToValueAtTime(440, now + 0.15);
+
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.04, now + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.2);
+    } catch {
+      // ignore
+    }
+  }
 }
 
 export const soundEffects = new SoundEffects();

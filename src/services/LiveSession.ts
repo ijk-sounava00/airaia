@@ -25,6 +25,8 @@ export class LiveSession {
 
   private currentState: AssistantState = 'disconnected';
   private intentionalClose = false;
+  private retryCount = 0;
+  private reconnectTimeout: number | null = null;
   private thinkingTimer: number | null = null;
   private interruptTimer: number | null = null;
 
@@ -56,6 +58,11 @@ export class LiveSession {
       return;
     }
 
+    if (this.reconnectTimeout !== null) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+
     this.intentionalClose = false;
     this.setState('connecting');
 
@@ -69,6 +76,7 @@ export class LiveSession {
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
+        this.retryCount = 0;
         console.log('WebSocket connected to /live');
       };
 
@@ -77,6 +85,7 @@ export class LiveSession {
           const msg = JSON.parse(event.data);
 
           if (msg.type === 'session_ready') {
+            this.retryCount = 0;
             console.log('AIRA Live Session Ready:', msg.model);
             // Enter idle state waiting silently for user speech
             this.setState('idle');
@@ -138,7 +147,7 @@ export class LiveSession {
               }));
             }
           } else if (msg.type === 'error') {
-            console.error('Server error message:', msg.message);
+            console.warn('Server error notice:', msg.message);
             this.callbacks.onError(msg.message || 'Error occurred in Live session');
             this.disconnect();
           } else if (msg.type === 'session_closed') {
@@ -147,25 +156,46 @@ export class LiveSession {
             }
           }
         } catch (err) {
-          console.error('Error handling WebSocket message:', err);
+          console.warn('Error handling WebSocket message:', err);
         }
       };
 
-      this.ws.onerror = (e) => {
-        console.error('WebSocket connection error:', e);
-        this.callbacks.onError('Could not establish real-time link with AIRA');
+      let hasHandledFailure = false;
+      const handleFailure = (_reason: string, _e?: any) => {
+        if (hasHandledFailure || this.intentionalClose) return;
+        hasHandledFailure = true;
+
+        if (this.retryCount < 3) {
+          this.retryCount++;
+          console.info(`AIRA Live connection reconnecting (attempt ${this.retryCount}/3)...`);
+          if (this.ws) {
+            try { this.ws.close(); } catch { /* ignore */ }
+            this.ws = null;
+          }
+          this.reconnectTimeout = window.setTimeout(() => {
+            this.connect();
+          }, 800);
+          return;
+        }
+
+        const inIframe = typeof window !== 'undefined' && window.self !== window.top;
+        const msg = inIframe
+          ? 'Real-time connection blip in iframe sandbox. Please tap Retry or Open in new tab.'
+          : 'Could not establish real-time link with AIRA. Please tap Retry.';
+        this.callbacks.onError(msg);
         this.disconnect();
       };
 
-      this.ws.onclose = () => {
-        console.log('WebSocket connection closed');
-        if (!this.intentionalClose) {
-          this.disconnect();
-        }
+      this.ws.onerror = (e) => {
+        handleFailure('error', e);
+      };
+
+      this.ws.onclose = (e) => {
+        handleFailure('close', e);
       };
 
     } catch (err: any) {
-      console.error('Failed to initiate live session:', err);
+      console.warn('Failed to initiate live session:', err?.message || err);
       this.callbacks.onError(err?.message || 'Failed to connect');
       this.disconnect();
     }
@@ -235,6 +265,12 @@ export class LiveSession {
    */
   disconnect(): void {
     this.intentionalClose = true;
+    this.retryCount = 0;
+
+    if (this.reconnectTimeout !== null) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
 
     if (this.thinkingTimer !== null) {
       clearTimeout(this.thinkingTimer);
@@ -276,5 +312,42 @@ export class LiveSession {
         this.setState('listening');
       }
     }, 250);
+  }
+
+  /**
+   * Transmits a captured screen frame into the Gemini Live session
+   */
+  sendScreenFrame(base64Data: string, mimeType = 'image/jpeg'): void {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      try {
+        this.ws.send(
+          JSON.stringify({
+            type: 'screen_frame',
+            data: base64Data,
+            mimeType,
+          })
+        );
+      } catch (err) {
+        console.warn('Failed to dispatch screen frame over WebSocket:', err);
+      }
+    }
+  }
+
+  /**
+   * Notifies Gemini Live whether screen sharing is currently active
+   */
+  sendScreenStatus(active: boolean): void {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      try {
+        this.ws.send(
+          JSON.stringify({
+            type: 'screen_status',
+            active,
+          })
+        );
+      } catch (err) {
+        console.warn('Failed to dispatch screen status over WebSocket:', err);
+      }
+    }
   }
 }

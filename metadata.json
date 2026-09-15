@@ -1,8 +1,9 @@
 {
   "name": "AIRA AI Assistant",
-  "description": "Futuristic 3D holographic anime AI companion with real-time lip-sync, expressive emotions, eye-tracking, and low-latency voice interaction powered by Gemini Live API.",
+  "description": "Next-generation quantum neural AI companion featuring real-time 3D gyroscopic core animations, 12 cybernetic color palettes, real-time screen sharing and multimodal vision analysis, and low-latency bidirectional conversation powered by Gemini Live API.",
   "requestFramePermissions": [
-    "microphone"
+    "microphone",
+    "display-capture"
   ],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

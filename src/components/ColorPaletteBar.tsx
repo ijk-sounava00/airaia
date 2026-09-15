@@ -19,18 +19,26 @@ export const ColorPaletteBar: React.FC<ColorPaletteBarProps> = ({
   return (
     <nav
       id="aira-color-palette-bar"
-      aria-label="Color Themes"
-      className="relative z-20 flex flex-col items-center justify-center gap-2 max-w-2xl mx-auto px-4 py-2"
+      aria-label="Aura Color Codes"
+      className="relative z-20 flex flex-col items-center justify-center gap-1.5 max-w-4xl mx-auto px-4 py-1.5"
     >
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-xl border border-white/10 bg-[#090d18]/80 shadow-xl overflow-x-auto no-scrollbar max-w-full">
-        <div className="flex items-center gap-1.5 pr-2 border-r border-white/10 shrink-0 text-slate-400">
+      <div
+        className="flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 rounded-full backdrop-blur-2xl border bg-[#060a14]/90 shadow-2xl overflow-x-auto max-w-full transition-all duration-500"
+        style={{ borderColor: currentConfig.border }}
+      >
+        {/* Active Theme Hex Label */}
+        <div className="flex items-center gap-1.5 pr-2.5 border-r border-white/10 shrink-0 text-slate-400">
           <Palette className="w-3.5 h-3.5" style={{ color: currentConfig.accent }} />
-          <span className="text-[10px] font-mono uppercase tracking-wider text-slate-300">
-            {currentConfig.tag}
+          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-200">
+            {currentConfig.name}
+          </span>
+          <span className="text-[9px] font-mono text-slate-400 hidden sm:inline">
+            ({currentConfig.hexCode})
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        {/* 12 Color Swatches */}
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           {themeKeys.map((key) => {
             const config = AURA_THEMES[key];
             const isSelected = key === auraTheme;
@@ -40,36 +48,36 @@ export const ColorPaletteBar: React.FC<ColorPaletteBarProps> = ({
                 key={key}
                 type="button"
                 onClick={() => onSelectTheme(key)}
-                className="relative group p-1 sm:p-1.5 rounded-full transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-white/40"
+                className="relative group p-1 sm:p-1.5 rounded-full transition-transform active:scale-90 cursor-pointer focus:outline-none"
                 title={`${config.name} (${config.hexCode})`}
-                aria-label={`Select ${config.name} theme`}
+                aria-label={`Select ${config.name}`}
               >
-                {/* Active selection glowing halo */}
+                {/* Active Selection Glow Ring */}
                 {isSelected && (
                   <motion.div
-                    layoutId="active-color-ring"
+                    layoutId="active-aura-ring"
                     className="absolute inset-0 rounded-full border-2"
                     style={{
                       borderColor: config.primary,
-                      boxShadow: `0 0 12px ${config.glow}`,
+                      boxShadow: `0 0 14px ${config.glow}`,
                     }}
-                    transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+                    transition={{ type: 'spring', stiffness: 450, damping: 30 }}
                   />
                 )}
 
                 {/* Color Dot Swatch */}
                 <div
-                  className={`relative w-4 h-4 sm:w-5 sm:h-5 rounded-full transition-transform duration-200 ${
-                    isSelected ? 'scale-110' : 'group-hover:scale-125 opacity-75 group-hover:opacity-100'
+                  className={`relative w-4 h-4 sm:w-5 sm:h-5 rounded-full transition-all duration-200 border border-white/20 ${
+                    isSelected ? 'scale-110' : 'opacity-70 group-hover:opacity-100 group-hover:scale-120'
                   }`}
                   style={{
                     backgroundColor: config.primary,
-                    boxShadow: isSelected ? `0 0 8px ${config.primary}` : 'none',
+                    boxShadow: isSelected ? `0 0 10px ${config.primary}` : 'none',
                   }}
                 />
 
                 {/* Hover Tooltip */}
-                <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-md text-[9px] font-mono whitespace-nowrap bg-black/90 border border-white/15 text-slate-200 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-30 shadow-lg">
+                <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-md text-[9px] font-mono whitespace-nowrap bg-black/95 border border-white/15 text-slate-200 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-30 shadow-xl">
                   {config.name}
                 </span>
               </button>

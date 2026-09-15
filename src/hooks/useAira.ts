@@ -6,6 +6,8 @@ import { ToolManager } from '../services/ToolManager';
 import { LiveSession } from '../services/LiveSession';
 import { StateManager, StateSnapshot } from '../services/StateManager';
 import { soundEffects } from '../services/soundEffects';
+import { ScreenShareManager } from '../screen/ScreenShareManager';
+import { ScreenShareState } from '../screen/screenTypes';
 
 export function useAira() {
   const stateManagerRef = useRef<StateManager | null>(null);
@@ -13,13 +15,48 @@ export function useAira() {
   const audioPlayerRef = useRef<AudioPlayer | null>(null);
   const toolManagerRef = useRef<ToolManager | null>(null);
   const liveSessionRef = useRef<LiveSession | null>(null);
+  const screenShareManagerRef = useRef<ScreenShareManager | null>(null);
 
   // Keep state manager in ref
   if (!stateManagerRef.current) {
     stateManagerRef.current = new StateManager();
   }
 
+  // Keep screen share manager in ref
+  if (!screenShareManagerRef.current) {
+    screenShareManagerRef.current = new ScreenShareManager();
+  }
+
   const [snapshot, setSnapshot] = useState<StateSnapshot>(() => stateManagerRef.current!.getSnapshot());
+  const [screenShareState, setScreenShareState] = useState<ScreenShareState>(() =>
+    screenShareManagerRef.current!.getState()
+  );
+
+  // Subscribe to screen share state and frame streaming
+  useEffect(() => {
+    const ssm = screenShareManagerRef.current!;
+
+    const unsubState = ssm.subscribeState((newScreenState) => {
+      setScreenShareState(newScreenState);
+    });
+
+    const unsubFrame = ssm.onFrame((payload) => {
+      // Stream visual screen frame to Gemini Live API
+      liveSessionRef.current?.sendScreenFrame(payload.data, payload.mimeType);
+    });
+
+    const unsubEnded = ssm.onEnded(() => {
+      soundEffects.playScreenShareStop();
+      liveSessionRef.current?.sendScreenStatus(false);
+    });
+
+    return () => {
+      unsubState();
+      unsubFrame();
+      unsubEnded();
+      ssm.dispose();
+    };
+  }, []);
 
   // Subscribe to state changes
   useEffect(() => {
@@ -100,6 +137,11 @@ export function useAira() {
         sm.setState(newState);
         if ((newState === 'idle' || newState === 'listening') && prev === 'connecting') {
           soundEffects.playWake();
+          // If screen was already sharing, notify session of active vision
+          if (screenShareManagerRef.current?.isSharing()) {
+            session.sendScreenStatus(true);
+            screenShareManagerRef.current.forceCapture();
+          }
         }
       },
       onError: (err: string) => {
@@ -107,6 +149,28 @@ export function useAira() {
       },
       onTranscript: (role, text) => {
         sm.setTranscript(role, text);
+        // When user asks a visual or screen-related query, immediately capture and send a fresh keyframe
+        if (role === 'user' && screenShareManagerRef.current?.isSharing()) {
+          const lower = text.toLowerCase();
+          const screenKeywords = [
+            'look',
+            'screen',
+            'see',
+            'code',
+            'error',
+            'here',
+            'read',
+            'click',
+            'page',
+            'what is',
+            'check this',
+            'warning',
+            'this button',
+          ];
+          if (screenKeywords.some((k) => lower.includes(k))) {
+            screenShareManagerRef.current.forceCapture();
+          }
+        }
       },
       onMicAnalysis: (volume, frequencies) => {
         const curr = sm.getSnapshot().state;
@@ -139,6 +203,7 @@ export function useAira() {
     if (!session) return;
 
     soundEffects.playClick();
+    stateManagerRef.current.setError(null);
 
     if (snapshot.state === 'disconnected') {
       audioPlayerRef.current?.unlockAudio();
@@ -147,6 +212,23 @@ export function useAira() {
       session.disconnect();
     }
   }, [snapshot.state]);
+
+  const retryConnection = useCallback(() => {
+    const session = liveSessionRef.current;
+    if (!session) return;
+
+    soundEffects.playClick();
+    stateManagerRef.current.setError(null);
+    audioPlayerRef.current?.unlockAudio();
+    session.disconnect();
+    setTimeout(() => {
+      session.connect();
+    }, 150);
+  }, []);
+
+  const clearError = useCallback(() => {
+    stateManagerRef.current.setError(null);
+  }, []);
 
   const interrupt = useCallback(() => {
     const session = liveSessionRef.current;
@@ -181,9 +263,62 @@ export function useAira() {
     stateManagerRef.current?.dismissTimer(id);
   }, []);
 
+  // Screen share controller functions
+  const startScreenShare = useCallback(async () => {
+    const ssm = screenShareManagerRef.current;
+    if (!ssm) return;
+
+    try {
+      soundEffects.playClick();
+      await ssm.start();
+      soundEffects.playScreenShareStart();
+      liveSessionRef.current?.sendScreenStatus(true);
+    } catch (err: any) {
+      console.warn('Screen share initiation error:', err?.message || err);
+    }
+  }, []);
+
+  const stopScreenShare = useCallback(() => {
+    const ssm = screenShareManagerRef.current;
+    if (!ssm) return;
+
+    soundEffects.playScreenShareStop();
+    ssm.stop();
+    liveSessionRef.current?.sendScreenStatus(false);
+  }, []);
+
+  const toggleScreenShare = useCallback(async () => {
+    const ssm = screenShareManagerRef.current;
+    if (!ssm) return;
+
+    if (ssm.isSharing()) {
+      stopScreenShare();
+    } else {
+      await startScreenShare();
+    }
+  }, [startScreenShare, stopScreenShare]);
+
+  const forceInspectScreen = useCallback(async () => {
+    const ssm = screenShareManagerRef.current;
+    if (!ssm || !ssm.isSharing()) return;
+
+    soundEffects.playClick();
+    await ssm.forceCapture();
+  }, []);
+
+  const isScreenShareSupported = screenShareManagerRef.current?.isSupported() ?? false;
+
   return {
     ...snapshot,
+    screenShareState,
+    isScreenShareSupported,
+    startScreenShare,
+    stopScreenShare,
+    toggleScreenShare,
+    forceInspectScreen,
     toggleConnection,
+    retryConnection,
+    clearError,
     interrupt,
     toggleMute,
     setAuraTheme,

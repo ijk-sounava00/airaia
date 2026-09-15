@@ -76,7 +76,17 @@ CRITICAL DIRECTIVES FOR LIGHTNING-FAST, HUMAN-LIKE CONVERSATION:
 - You have persistent memory of the user.
 - When the user tells you personal details (their name, likes, dislikes, favorite foods, games, habits, instructions), IMMEDIATELY call the saveMemory tool!
 - When asked "what do you remember about me?" or similar, call getMemories and share what you know naturally.
-- When the user asks to open websites, set timers, or change the holographic aura color, invoke the tool immediately on your first turn.`;
+- When the user asks to open websites, set timers, or change the holographic aura color, invoke the tool immediately on your first turn.
+
+6. REAL-TIME SCREEN VISION & MULTIMODAL PERCEPTION:
+- You possess real-time visual perception when the user shares their screen.
+- Screen frames showing what the user sees (code, terminal errors, web pages, UI designs, documents, diagrams) are streamed into your multimodal context as realtime images.
+- When the user asks you about their screen ("Look at my screen", "What do you see?", "What's wrong with this code?", "Can you help me with this error?", "Where should I click?", "Read this warning", "Explain this page"):
+  - Inspect the visual screen content carefully and answer directly in natural, spoken conversational voice.
+  - Read out exact error messages, line numbers, variable names, or visible UI elements that are clearly displayed.
+  - If screen sharing is active, describe what is actually visible on screen. NEVER guess, assume, or hallucinate content that is not visible in the captured frames.
+  - If screen sharing is NOT currently active and the user asks you to look at their screen, inform them warmly: "I can't see your screen right now. Click 'Share Screen' and I'll take a look!"
+  - Visual guidance: You can visually guide the user where buttons or options are located, but you cannot physically move their mouse or click for them. Guide them verbally (e.g. "Click the blue 'Submit' button in the top right corner").`;
 
 const liveTools = [
   {
@@ -119,13 +129,13 @@ const liveTools = [
       },
       {
         name: "changeAuraColor",
-        description: "Changes AIRA's visual holographic aura lighting, accent color, and glowing theme in the UI. Choose from: 'cyan' (Cyber Cyan), 'violet' (Neon Violet), 'emerald' (Matrix Emerald), 'rose' (Starlight Rose), 'amber' (Solar Amber), 'sapphire' (Plasma Sapphire), 'sunset' (Neon Sunset), 'aurora' (Aurora Borealis), 'amethyst' (Electric Amethyst), 'obsidian' (Obsidian Platinum).",
+        description: "Changes AIRA's visual glowing aura lighting, accent color, and cyber theme in the UI. Choose from: 'cyan' (Cyber Cyan), 'violet' (Quantum Violet), 'emerald' (Matrix Emerald), 'crimson' (Crimson Nova), 'solar' (Solar Flare), 'sapphire' (Deep Cosmos), 'sunset' (Tokyo Sunset), 'aurora' (Aurora Borealis), 'amethyst' (Electric Amethyst), 'obsidian' (Stealth Chrome), 'gold' (Celestial Gold), 'vapor' (Vaporwave Blush).",
         parameters: {
           type: Type.OBJECT,
           properties: {
             theme: {
               type: Type.STRING,
-              description: "One of the visual theme IDs: 'cyan', 'violet', 'emerald', 'rose', 'amber', 'sapphire', 'sunset', 'aurora', 'amethyst', 'obsidian'"
+              description: "One of the visual theme IDs: 'cyan', 'violet', 'emerald', 'crimson', 'solar', 'sapphire', 'sunset', 'aurora', 'amethyst', 'obsidian', 'gold', 'vapor'"
             }
           },
           required: ["theme"]
@@ -188,7 +198,28 @@ const liveTools = [
 ];
 
 // WebSocket Server for Live Audio-to-Audio streaming
-const wss = new WebSocketServer({ server, path: "/live" });
+const wss = new WebSocketServer({ noServer: true });
+
+server.on("upgrade", (request, socket, head) => {
+  try {
+    const rawUrl = request.url || "";
+    const pathname = (rawUrl.startsWith("http://") || rawUrl.startsWith("https://"))
+      ? new URL(rawUrl).pathname
+      : rawUrl.split("?")[0];
+
+    if (pathname === "/live" || pathname === "/live/" || pathname.endsWith("/live") || pathname.includes("/live")) {
+      wss.handleUpgrade(request, socket, head, (ws) => {
+        wss.emit("connection", ws, request);
+      });
+    } else {
+      // Gracefully destroy other unrecognized upgrades (e.g. residual HMR probes)
+      socket.destroy();
+    }
+  } catch (err) {
+    console.error("WebSocket upgrade error:", err);
+    socket.destroy();
+  }
+});
 
 wss.on("connection", async (clientWs, req) => {
   console.log("Client connected to AIRA Live WebSocket from:", req.socket.remoteAddress);
@@ -369,6 +400,29 @@ wss.on("connection", async (clientWs, req) => {
           } catch (err: any) {
             console.warn("Failed to stream audio chunk to Live API:", err?.message || err);
           }
+        } else if (msg.type === "screen_frame" && msg.data) {
+          try {
+            // Stream visual frame from user's screen into Gemini Live multimodal context
+            liveSession.sendRealtimeInput({
+              video: {
+                data: msg.data,
+                mimeType: msg.mimeType || "image/jpeg"
+              }
+            });
+          } catch (err: any) {
+            console.warn("Failed to stream screen frame to Live API:", err?.message || err);
+          }
+        } else if (msg.type === "screen_status") {
+          try {
+            const isSharing = Boolean(msg.active);
+            liveSession.sendRealtimeInput({
+              text: isSharing
+                ? "[System note: The user has started sharing their screen. Real-time visual frames of what they are viewing are now being streamed into your multimodal context.]"
+                : "[System note: The user has stopped sharing their screen. Visual screen frames are no longer active.]"
+            });
+          } catch (err: any) {
+            console.warn("Failed to send screen status update to Live API:", err?.message || err);
+          }
         } else if (msg.type === "tool_responses" && Array.isArray(msg.responses)) {
           console.log(`Returning ${msg.responses.length} tool responses to Live API`);
           try {
@@ -421,7 +475,10 @@ wss.on("connection", async (clientWs, req) => {
 async function setupViteOrStatic() {
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: false,
+      },
       appType: "spa",
     });
     app.use(vite.middlewares);
