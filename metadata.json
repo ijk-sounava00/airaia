@@ -1,0 +1,10 @@
+{
+  "name": "AIRA AI Assistant",
+  "description": "Futuristic 3D holographic anime AI companion with real-time lip-sync, expressive emotions, eye-tracking, and low-latency voice interaction powered by Gemini Live API.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
